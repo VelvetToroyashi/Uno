@@ -1,3 +1,4 @@
+use std::io::stdin;
 use crate::card::{Card, CardColor};
 use rand::Rng;
 
@@ -27,7 +28,7 @@ impl Player {
     }
 
     pub fn new_ai() -> Player {
-        let ran = rand::thread_rng().gen_range(0..AI_NAMES.len());
+        let ran = rand::thread_rng().gen_range(0..=AI_NAMES.len());
         Player::Ai(AiPlayer {
             name: AI_NAMES[ran].to_string(),
             hand: vec![],
@@ -68,12 +69,13 @@ impl HumanPlayer {
 
     fn input_loop(&self, card: Card) {
         loop {
+            // TODO: Check if there are any cards to play, otherwise force drawing
             println!("What would you like to do? (1) Play a card, (2) Draw a card");
 
             let parsed;
             loop {
                 let mut input = String::new();
-                std::io::stdin().read_line(&mut input).unwrap();
+                stdin().read_line(&mut input).unwrap();
 
                 if let Ok(num) = input.trim().parse::<u8>() {
                     parsed = num;
@@ -88,38 +90,39 @@ impl HumanPlayer {
     fn play_card(&mut self, card: &Card) -> Option<Card> {
         println!("Which card would you like to play?");
 
+        //TODO: Change this to log cards that can't be played as unplayable instead of just not showing them
         for (i, c) in self.hand.iter().filter(|x| x.can_play(card)).enumerate() {
             println!("{}: {} {:?}", i, c.color().unwrap(), c);
         }
 
-        let mut parsed;
+        let parsed;
         loop {
             let mut input = String::new();
-            std::io::stdin().read_line(&mut input).unwrap();
+            stdin().read_line(&mut input).unwrap();
 
             let parsed_input = input.trim().parse::<usize>();
             if parsed_input.is_ok() && parsed_input.to_owned().unwrap() < self.hand.len() {
                 parsed = parsed_input.unwrap();
-                break;
+                break
             } else if input.trim().to_lowercase() == "back" {
-                return None;
+                return None
             } else {
                 println!("Please enter a valid number.");
-                continue;
+                continue
             }
         }
 
-        let mut card = &self.hand.remove(parsed);
+        let card = &mut self.hand.remove(parsed);
 
         let selection = match card {
-            Card::Wild { color: _ } => Self::get_card_color_from_input(&card),
-            Card::DrawFour { color: _ } => Self::get_card_color_from_input(&card),
+            Card::Wild { color: _ } => Self::get_card_color_from_input(card),
+            Card::DrawFour { color: _ } => Self::get_card_color_from_input(card),
             _ => None,
         };
 
         if let Some(color) = selection {
             // We're dealing with a special card; this is safe.
-            return Some(card.with_color(&color).unwrap());
+            return Some(*card.with_color(&color).unwrap());
         }
 
         None
@@ -128,7 +131,7 @@ impl HumanPlayer {
     fn get_card_color_from_input(card: &Card) -> Option<CardColor> {
         loop {
             let mut input = String::new();
-            std::io::stdin().read_line(&mut input).unwrap();
+            stdin().read_line(&mut input).unwrap();
 
             print!(
                 "({:?}) Pick a color (Red, Green, Blue, Yellow): ",
@@ -143,7 +146,7 @@ impl HumanPlayer {
                 "blue" => return Some(CardColor::Blue),
                 "yellow" => return Some(CardColor::Yellow),
                 "back" => return None,
-                _ => println!("Please enter a valid color."),
+                _ => { println!("Please enter a valid color."); continue },
             }
         }
     }

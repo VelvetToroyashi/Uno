@@ -56,7 +56,19 @@ impl Card {
         }
     }
 
-    pub fn with_color(&mut self, color: &CardColor) -> Result<Self, Error> {}
+    pub fn with_color(&mut self, color: &CardColor) -> Option<&Card> {
+        match self {
+            Card::Wild { color: _ } => {
+                *self = Card::Wild { color: Some(*color) };
+                Some(self)
+            }
+            Card::DrawFour { color: _ } => {
+                *self = Card::DrawFour { color: Some(*color) };
+                Some(self)
+            }
+            _ => None,
+        }
+    }
 
     pub fn can_play(&self, rhs: &Card) -> bool {
         use Card::*;
