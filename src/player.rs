@@ -17,7 +17,7 @@ pub trait Player {
     fn name(&self) -> &str;
     fn hand<'v>(&self) -> &'v mut Vec<Card>;
     fn execute_turn(&self, turn: &Turn) -> Option<&Card>;
-    fn observe_turn(&self, card: &Card);
+    fn observe_turn(&self, other: &dyn Player, card: &Card);
     fn observe_turn_skip(&self, observed_cards: Option<Vec<&Card>>);
 }
 pub trait AiPlayer: Player {}

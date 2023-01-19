@@ -37,7 +37,7 @@ pub enum CardColor {
 }
 
 pub struct Deck {
-    cards: Vec<Card>,
+    pub(crate) cards: Vec<Card>,
 }
 
 impl Deck {
@@ -97,6 +97,10 @@ impl Deck {
 
     pub fn draw(&mut self) -> Option<Card> {
         self.cards.pop()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.cards.is_empty()
     }
 
     pub fn draw_multiple(&mut self, count: usize) -> Vec<Card> {

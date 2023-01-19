@@ -1,4 +1,6 @@
+use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
+use std::ops::Deref;
 use rand::prelude::SliceRandom;
 use crate::card::{Card, Deck};
 use crate::player::Player;
@@ -9,6 +11,7 @@ pub struct GameState<'a> {
     players: Vec<&'a mut dyn Player>,
     current_player: usize,
     direction: Direction,
+    to_draw: u8,
 }
 
 pub struct Turn<'a> {
@@ -16,6 +19,12 @@ pub struct Turn<'a> {
     draw_pile: &'a mut Deck,
     discard_pile: &'a mut Vec<Card>,
     player: &'a dyn Player,
+}
+
+pub enum TurnResult {
+    Played(Card),
+    Drew(u8),
+    Skipped,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -32,6 +41,7 @@ impl<'a> GameState<'a> {
             players,
             current_player: 0,
             direction: Direction::Clockwise,
+            to_draw: 0,
         }
     }
 
@@ -61,11 +71,10 @@ impl<'a> GameState<'a> {
             }
         }
 
-        let mut last_card = self.discard.last().unwrap();
-
         loop {
 
-            let current_player = &*self.players[self.current_player];
+            self.current_player = self.next_player();
+            let mut current_player = &*self.players[self.current_player];
 
             let turn = Turn {
                 hand: current_player.hand(),
@@ -74,21 +83,56 @@ impl<'a> GameState<'a> {
                 player: current_player,
             };
 
+            let card_selection = current_player.execute_turn(&turn);
 
+            if let Some(card) = card_selection {
+                if !current_player.hand().contains(card) {
+                    panic!("Player tried to play a card that they don't have!");
+                }
 
+                self.discard.push(*card);
 
+                self.players.iter().for_each(|player| {
+                    player.observe_turn(current_player, card);
+                });
+            }
+
+            if current_player.hand().is_empty() {
+                println!("{} won!", current_player.name());
+
+                std::thread::sleep(std::time::Duration::from_secs(7));
+                std::process::exit(0);
+            }
+
+            if self.deck.is_empty() || self.to_draw > self.deck.cards.len() as u8 {
+                self.deck.reinsert(self.discard.drain(..self.discard.len()).collect());
+            }
+
+            if matches!(self.discard.last(), Some(Card::Skip { .. }))  {
+
+                self.current_player = self.next_player();
+                current_player = &*self.players[self.current_player];
+
+                current_player.observe_turn_skip(None);
+                continue;
+            }
+
+            if matches!(self.discard.last(), Some(Card::Reverse { .. })) {
+                self.direction = match self.direction {
+                    Direction::Clockwise => Direction::CounterClockwise,
+                    Direction::CounterClockwise => Direction::Clockwise,
+                };
+            }
         }
     }
 
-    fn next_player(&'a mut self) -> &'a dyn Player {
+    fn next_player(&self) -> usize{
         let mut index = self.current_player;
         let direction = self.direction;
 
-        let next_player = match direction {
+        match direction {
             Direction::Clockwise => {
-                index = (index + 1) % self.players.len();
-
-                &self.players[index]
+                index = (index + 1) % self.players.len()
             },
             Direction::CounterClockwise => {
 
@@ -97,13 +141,9 @@ impl<'a> GameState<'a> {
                 } else {
                     index -= 1;
                 }
-
-                &self.players[index]
             }
         };
 
-        self.current_player = index;
-
-        *next_player
+        index
     }
 }
