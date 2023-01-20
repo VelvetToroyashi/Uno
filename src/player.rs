@@ -1,9 +1,7 @@
-use std::intrinsics::likely;
 use std::io::stdin;
-use std::marker::PhantomData;
-use crate::card::{Card, CardColor};
+use crate::card::{Card};
 use rand::Rng;
-use crate::game::{GameState, Turn, TurnResult};
+use crate::game::{Turn, TurnResult};
 
 pub struct Human {
     name: String,
@@ -134,11 +132,21 @@ impl Player for Human {
     }
 
     fn observe_turn(&self, other: &dyn Player, card: &Card) {
-        todo!()
+        println!("{} played a {}.", other.name(), card);
     }
 
     fn observe_turn_skip(&self, observed_cards: Option<Vec<&Card>>) {
-        todo!()
+        if let Some(observed_cards) = observed_cards {
+            if observed_cards.len() == 1 {
+                println!("You drew a {}.", observed_cards[0]);
+            }
+            else {
+                println!("You drew {} cards. ({:?})", observed_cards.len(), observed_cards);
+            }
+        }
+        else {
+            println!("You have been skipped!");
+        }
     }
 }
 
