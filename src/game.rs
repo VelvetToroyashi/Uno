@@ -1,11 +1,12 @@
 use std::borrow::{BorrowMut};
+use std::cell::RefCell;
 use crate::card::{Card, Deck};
 use crate::player::Player;
 
-pub struct GameState {
+pub struct GameState<'a> {
     deck: Deck,
     discard: Vec<Card>,
-    players: Vec<Box<dyn Player>>,
+    players: Vec<(&'a mut dyn Player, Vec<Card>)>,
     current_player: usize,
     direction: Direction,
     to_draw: u8,
@@ -30,12 +31,12 @@ enum Direction {
 }
 
 
-impl GameState {
-    pub fn new(players: Vec<Box<dyn Player>>) -> GameState {
+impl<'a> GameState<'a> {
+    pub fn new(players: Vec<&'a mut dyn Player>) -> GameState<'a> {
         GameState {
             deck: Deck::generate(),
             discard: vec![],
-            players,
+            players: players.into_iter().map(|p| (p, vec![])).collect(),
             current_player: 0,
             direction: Direction::Clockwise,
             to_draw: 0,
@@ -45,10 +46,10 @@ impl GameState {
     pub fn start(&mut self) -> ! {
         self.deck.shuffle();
 
-        for player in self.players.iter_mut() {
+        for (_, hand) in self.players.iter_mut() {
 
             let insert = self.deck.draw_multiple(7);
-            player.hand().extend(insert);
+            hand.extend(insert);
         }
 
         loop {
@@ -71,10 +72,10 @@ impl GameState {
         loop {
 
             self.current_player = self.next_player();
-            let mut current_player = self.players[self.current_player].as_mut();
+            let (current_player, player_hand) = self.players.get_mut(self.current_player).unwrap();
 
             let turn = Turn {
-                hand: current_player.hand(),
+                hand: player_hand,
                 draw_pile: &mut self.deck,
                 discard_pile: &mut self.discard,
                 to_draw: self.to_draw,
@@ -85,14 +86,14 @@ impl GameState {
             match card_selection {
                 TurnResult::Played(card) => {
                     self.discard.push(card);
-                    current_player.hand().remove(current_player.hand().iter().position(|c| c == &card).unwrap());
+                    player_hand.remove(player_hand.iter().position(|c| c == &card).unwrap());
                 }
                 TurnResult::Drew(_) => {
                     self.to_draw = 0;
                 }
             }
 
-            if current_player.hand().is_empty() {
+            if player_hand.is_empty() {
                 println!("{} won!", current_player.name());
 
                 std::thread::sleep(std::time::Duration::from_secs(7));
@@ -106,9 +107,9 @@ impl GameState {
             if matches!(self.discard.last(), Some(Card::Skip { .. }))  {
 
                 self.current_player = self.next_player();
-                current_player = self.players[self.current_player].as_mut();
+                let next_player = &self.players.get_mut(self.current_player).unwrap().0;
 
-                current_player.observe_turn_skip(None);
+                next_player.observe_turn_skip(None);
                 continue;
             }
 
@@ -123,16 +124,16 @@ impl GameState {
             if matches!(self.discard.last(), Some(Card::DrawTwo { .. })) || matches!(self.discard.last(), Some(Card::DrawFour { .. })) {
 
                 let next_player_index = self.next_player();
-                let next_player = self.players[next_player_index].as_mut();
+                let (next_player, next_hand) = self.players.get_mut(next_player_index).unwrap();
 
-                let should_skip = !self.to_draw != 0 && !Self::can_play(next_player, self.discard.last().unwrap());
+                let should_skip = !self.to_draw != 0 && !Self::can_play(next_hand, self.discard.last().unwrap());
 
                 if should_skip {
                     let cards = self.deck.draw_multiple(self.to_draw);
 
                     next_player.observe_turn_skip(Some(cards.iter().collect()));
 
-                    next_player.borrow_mut().hand().extend(cards);
+                    next_hand.extend(cards);
 
                     self.to_draw = 0;
                     self.current_player = self.next_player();
@@ -148,8 +149,8 @@ impl GameState {
         }
     }
 
-    fn can_play(player: &mut dyn Player, card: &Card) -> bool {
-        player.hand().iter().any(|c| c.can_play_on(card))
+    fn can_play(hand: &mut Vec<Card>, card: &Card) -> bool {
+        hand.iter().any(|c| c.can_play_on(card))
     }
 
     fn next_player(&self) -> usize{

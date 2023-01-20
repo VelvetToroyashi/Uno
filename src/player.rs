@@ -5,18 +5,15 @@ use crate::game::{Turn, TurnResult};
 
 pub struct Human {
     name: String,
-    hand: Vec<Card>,
 }
 
 pub struct Ai<R: RngCore> {
     ran: R,
     name: String,
-    hand: Vec<Card>,
 }
 
 pub trait Player {
     fn name(&self) -> &str;
-    fn hand(&mut self) -> &mut Vec<Card>;
     fn execute_turn(&mut self, turn: &Turn) -> TurnResult;
     fn observe_turn(&self, other: &dyn Player, card: &Card);
     fn observe_turn_skip(&self, observed_cards: Option<Vec<&Card>>);
@@ -33,7 +30,6 @@ impl<'h> Human {
     pub fn new(name: String) -> Human {
         Human {
             name,
-            hand: vec![],
         }
     }
 
@@ -153,10 +149,6 @@ impl Player for Human {
         &self.name
     }
 
-    fn hand(&mut self) -> &mut Vec<Card> {
-        &mut self.hand
-    }
-
     fn execute_turn(&mut self, turn: &Turn) -> TurnResult {
         println!("Its your turn.");
 
@@ -206,7 +198,6 @@ impl<R> Ai<R> where R: RngCore {
         Ai {
             ran,
             name,
-            hand: vec![],
         }
     }
 }
@@ -216,14 +207,8 @@ impl<R> Player for Ai<R> where R : RngCore {
         &self.name
     }
 
-    fn hand(&mut self) -> &mut Vec<Card> {
-        &mut self.hand
-    }
-
     fn execute_turn(&mut self, turn: &Turn) -> TurnResult {
         let index = self.ran.gen_range(0..turn.hand.len());
-
-
 
         unimplemented!("AI not implemented yet")
     }
