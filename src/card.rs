@@ -103,7 +103,7 @@ impl Deck {
         self.cards.is_empty()
     }
 
-    pub fn draw_multiple(&mut self, count: usize) -> Vec<Card> {
+    pub fn draw_multiple(&mut self, count: u8) -> Vec<Card> {
         let mut cards = vec![];
 
         for _ in 0..count {
@@ -167,7 +167,7 @@ impl Card {
         }
     }
 
-    pub fn is_playable(&self, rhs: &Card) -> bool {
+    pub fn can_play_on(&self, rhs: &Card) -> bool {
         use Card::*;
         match (&self, rhs) {
             (

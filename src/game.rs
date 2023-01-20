@@ -19,6 +19,7 @@ pub struct Turn<'a> {
     draw_pile: &'a mut Deck,
     discard_pile: &'a mut Vec<Card>,
     player: &'a dyn Player,
+    to_draw: u8,
 }
 
 pub enum TurnResult {
@@ -81,6 +82,7 @@ impl<'a> GameState<'a> {
                 draw_pile: &mut self.deck,
                 discard_pile: &mut self.discard,
                 player: current_player,
+                to_draw: self.to_draw,
             };
 
             let card_selection = current_player.execute_turn(&turn);
@@ -117,6 +119,32 @@ impl<'a> GameState<'a> {
                 continue;
             }
 
+            if card_selection.is_some() {
+                self.to_draw += match self.discard.last() {
+                    Some(Card::DrawTwo { .. }) => 2,
+                    Some(Card::DrawFour { .. }) => 4,
+                    _ => 0,
+                };
+            }
+
+            if matches!(self.discard.last(), Some(Card::DrawTwo { .. })) || matches!(self.discard.last(), Some(Card::DrawFour { .. })) {
+
+                let next_player = &*self.players[self.next_player()];
+
+                let should_skip = !self.to_draw != 0 && !Self::can_play(next_player, self.discard.last().unwrap());
+
+                if should_skip {
+                    let cards = self.deck.draw_multiple(self.to_draw);
+
+                    next_player.observe_turn_skip(Some(cards.iter().collect()));
+
+                    next_player.hand().extend(cards);
+
+                    self.to_draw = 0;
+                    self.current_player = self.next_player();
+                }
+            }
+
             if matches!(self.discard.last(), Some(Card::Reverse { .. })) {
                 self.direction = match self.direction {
                     Direction::Clockwise => Direction::CounterClockwise,
@@ -124,6 +152,10 @@ impl<'a> GameState<'a> {
                 };
             }
         }
+    }
+
+    fn can_play(player: &dyn Player, card: &Card) -> bool {
+        player.hand().iter().any(|c| c.can_play_on(card))
     }
 
     fn next_player(&self) -> usize{
