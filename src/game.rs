@@ -12,16 +12,15 @@ pub struct GameState {
 }
 
 pub struct Turn<'a> {
-    hand: &'a mut Vec<Card>,
+    pub to_draw: u8,
+    pub hand: &'a mut Vec<Card>,
     draw_pile: &'a mut Deck,
     discard_pile: &'a mut Vec<Card>,
-    to_draw: u8,
 }
 
 pub enum TurnResult {
     Played(Card),
     Drew(u8),
-    Skipped,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -29,6 +28,7 @@ enum Direction {
     Clockwise,
     CounterClockwise,
 }
+
 
 impl GameState {
     pub fn new(players: Vec<Box<dyn Player>>) -> GameState {
@@ -82,16 +82,14 @@ impl GameState {
 
             let card_selection = current_player.execute_turn(&turn);
 
-            if let Some(ref card) = card_selection {
-                if !current_player.hand().contains(card) {
-                    panic!("Player tried to play a card that they don't have!");
+            match card_selection {
+                TurnResult::Played(card) => {
+                    self.discard.push(card);
+                    current_player.hand().remove(current_player.hand().iter().position(|c| c == &card).unwrap());
                 }
-
-                self.discard.push(*card);
-
-                self.players.iter().for_each(|player| {
-                    player.observe_turn(current_player, card);
-                });
+                TurnResult::Drew(_) => {
+                    self.to_draw = 0;
+                }
             }
 
             if current_player.hand().is_empty() {
@@ -114,10 +112,10 @@ impl GameState {
                 continue;
             }
 
-            if card_selection.is_some() {
-                self.to_draw += match self.discard.last() {
-                    Some(Card::DrawTwo { .. }) => 2,
-                    Some(Card::DrawFour { .. }) => 4,
+            if matches!(card_selection, TurnResult::Played(_)) {
+                self.to_draw += match self.discard.last().unwrap() {
+                    Card::DrawTwo { .. } => 2,
+                    Card::DrawFour { .. } => 4,
                     _ => 0,
                 };
             }

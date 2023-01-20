@@ -141,6 +141,38 @@ impl Display for CardColor {
     }
 }
 
+impl Display for CardValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            CardValue::Zero => write!(f, "Zero"),
+            CardValue::One => write!(f, "One"),
+            CardValue::Two => write!(f, "Two"),
+            CardValue::Three => write!(f, "Three"),
+            CardValue::Four => write!(f, "Four"),
+            CardValue::Five => write!(f, "Five"),
+            CardValue::Six => write!(f, "Six"),
+            CardValue::Seven => write!(f, "Seven"),
+            CardValue::Eight => write!(f, "Eight"),
+            CardValue::Nine => write!(f, "Nine"),
+        }
+    }
+}
+
+impl Display for Card {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        
+        match self {
+            Card::Numeric { color, value } => write!(f, "{} {}", color, value),
+            Card::Skip { color } => write!(f, "{} Skip", color),
+            Card::Reverse { color } => write!(f, "{} Reverse", color),
+            Card::DrawTwo { color } => write!(f, "{} Draw Two", color),
+            Card::Wild { .. } => write!(f, "Wild Card"),
+            Card::DrawFour { .. } => write!(f, "Draw Four"),
+        }
+        
+    }
+}
+
 impl Card {
     pub fn color(&self) -> Option<CardColor> {
         match &self {
