@@ -100,7 +100,7 @@ impl<'h> Human {
 
         let card = turn.hand[index];
 
-        return match card {
+        match card {
             Card::Wild { .. } => {
                 let color = self.get_color();
 
@@ -118,7 +118,7 @@ impl<'h> Human {
     }
 
     fn get_color(&self) -> Option<CardColor> {
-        return loop {
+        loop {
             let mut input = String::new();
 
             println!("Enter a color to choose, or type 'back' to go back to the decision screen.");
@@ -126,21 +126,18 @@ impl<'h> Human {
             stdin().read_line(&mut input).unwrap();
             let input = input.trim().to_lowercase();
 
-            if input == "back" {
-                break None;
-            }
-
-            match input.as_str() {
-                "red" => break Some(CardColor::Red),
-                "blue" => break Some(CardColor::Blue),
-                "green" => break Some(CardColor::Green),
-                "yellow" => break Some(CardColor::Yellow),
+            return match input.as_str() {
+                "back" => None,
+                "red" => Some(CardColor::Red),
+                "blue" => Some(CardColor::Blue),
+                "green" => Some(CardColor::Green),
+                "yellow" => Some(CardColor::Yellow),
                 _ => {
                     println!("Invalid input. Please try again.");
                     continue;
                 }
             }
-        };
+        }
     }
 }
 
