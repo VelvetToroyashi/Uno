@@ -1,6 +1,6 @@
 use std::io::stdin;
-use crate::card::{Card};
-use rand::Rng;
+use crate::card::{Card, CardColor};
+use rand::{Rng, RngCore};
 use crate::game::{Turn, TurnResult};
 
 pub struct Human {
@@ -8,7 +8,8 @@ pub struct Human {
     hand: Vec<Card>,
 }
 
-pub struct Ai {
+pub struct Ai<R: RngCore> {
+    ran: R,
     name: String,
     hand: Vec<Card>,
 }
@@ -76,7 +77,7 @@ impl<'h> Human {
 
         println!("Enter a number to select a card, or type 'back' to go back to the decision screen.");
 
-        loop {
+        let index = loop {
             stdin().read_line(&mut input).unwrap();
             let input = input.trim().to_lowercase();
 
@@ -92,13 +93,58 @@ impl<'h> Human {
                         continue;
                     }
 
+                    break index;
                 },
                 Err(_) => {
                     println!("Invalid input. Please try again.");
                     continue;
                 }
             }
+        };
+
+        let card = turn.hand[index];
+
+        return match card {
+            Card::Wild { .. } => {
+                let color = self.get_color();
+
+                if color.is_some() { Some(TurnResult::Played(Card::Wild { color })) } else { None }
+            },
+            Card::DrawFour { .. } => {
+                let color = self.get_color();
+
+                if color.is_some() { Some(TurnResult::Played(Card::DrawFour { color })) } else { None }
+            },
+            _ => {
+                Some(TurnResult::Played(card))
+            }
         }
+    }
+
+    fn get_color(&self) -> Option<CardColor> {
+        return loop {
+            let mut input = String::new();
+
+            println!("Enter a color to choose, or type 'back' to go back to the decision screen.");
+
+            stdin().read_line(&mut input).unwrap();
+            let input = input.trim().to_lowercase();
+
+            if input == "back" {
+                break None;
+            }
+
+            match input.as_str() {
+                "red" => break Some(CardColor::Red),
+                "blue" => break Some(CardColor::Blue),
+                "green" => break Some(CardColor::Green),
+                "yellow" => break Some(CardColor::Yellow),
+                _ => {
+                    println!("Invalid input. Please try again.");
+                    continue;
+                }
+            }
+        };
     }
 }
 
@@ -152,15 +198,41 @@ impl Player for Human {
 
 impl HumanPlayer for Human {}
 
-impl Ai {
+impl<R> Ai<R> where R: RngCore {
 
-    pub fn new() -> Ai {
-        let mut rng = rand::thread_rng();
-        let name = AI_NAMES[rng.gen_range(0..AI_NAMES.len())].to_string();
+    pub fn new(mut ran: R) -> Ai<R> {
+        let name = AI_NAMES[ran.gen_range(0..AI_NAMES.len())].to_string();
 
         Ai {
+            ran,
             name,
             hand: vec![],
         }
+    }
+}
+
+impl<R> Player for Ai<R> where R : RngCore {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn hand(&mut self) -> &mut Vec<Card> {
+        &mut self.hand
+    }
+
+    fn execute_turn(&mut self, turn: &Turn) -> TurnResult {
+        let index = self.ran.gen_range(0..turn.hand.len());
+
+
+
+        unimplemented!("AI not implemented yet")
+    }
+
+    fn observe_turn(&self, other: &dyn Player, card: &Card) {
+        // Nothing to do here.
+    }
+
+    fn observe_turn_skip(&self, observed_cards: Option<Vec<&Card>>) {
+       // Nothing to do; the game loop handles insertion
     }
 }
