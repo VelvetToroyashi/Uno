@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use rand::distributions::WeightedIndex;
+
 use rand::prelude::SliceRandom;
 use rand::Rng;
 

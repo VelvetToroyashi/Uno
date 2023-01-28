@@ -215,7 +215,7 @@ impl<R> Player for Ai<R> where R : RngCore {
 
         let index = self.ran.gen_range(0..turn.hand.len());
 
-        let card = turn.hand[index];
+        let _card = turn.hand[index];
 
         //let _ = turn.hand.as_slice().group_by();
 
@@ -224,11 +224,11 @@ impl<R> Player for Ai<R> where R : RngCore {
         unimplemented!("AI not implemented yet")
     }
 
-    fn observe_turn(&self, other: &dyn Player, card: &Card) {
+    fn observe_turn(&self, _other: &dyn Player, _card: &Card) {
         // Nothing to do here.
     }
 
-    fn observe_turn_skip(&self, observed_cards: Option<Vec<&Card>>) {
+    fn observe_turn_skip(&self, _observed_cards: Option<Vec<&Card>>) {
        // Nothing to do; the game loop handles insertion
     }
 }
