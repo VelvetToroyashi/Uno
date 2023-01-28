@@ -1,5 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 use rand::distributions::WeightedIndex;
 use rand::prelude::SliceRandom;
 use rand::Rng;
@@ -141,6 +142,20 @@ impl Display for CardColor {
     }
 }
 
+impl FromStr for CardColor {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Red" => Ok(CardColor::Red),
+            "Green" => Ok(CardColor::Green),
+            "Blue" => Ok(CardColor::Blue),
+            "Yellow" => Ok(CardColor::Yellow),
+            _ => Err(format!("{} is not a valid color", s)),
+        }
+    }
+}
+
 impl Display for CardValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -160,7 +175,7 @@ impl Display for CardValue {
 
 impl Display for Card {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        
+
         match self {
             Card::Numeric { color, value } => write!(f, "{} {}", color, value),
             Card::Skip { color } => write!(f, "{} Skip", color),
@@ -169,7 +184,7 @@ impl Display for Card {
             Card::Wild { .. } => write!(f, "Wild Card"),
             Card::DrawFour { .. } => write!(f, "Draw Four"),
         }
-        
+
     }
 }
 

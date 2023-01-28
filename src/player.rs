@@ -1,7 +1,10 @@
 use std::io::stdin;
+use std::str::FromStr;
 use crate::card::{Card, CardColor};
 use rand::{Rng, RngCore};
 use crate::game::{Turn, TurnResult};
+
+const AI_ACTION_PROBABILITY: [f32; 2] = [0.7, 0.3];
 
 pub struct Human {
     name: String,
@@ -102,12 +105,12 @@ impl<'h> Human {
 
         match card {
             Card::Wild { .. } => {
-                let color = self.get_color();
+                let color = Human::get_color();
 
                 if color.is_some() { Some(TurnResult::Played(Card::Wild { color })) } else { None }
             },
             Card::DrawFour { .. } => {
-                let color = self.get_color();
+                let color = Human::get_color();
 
                 if color.is_some() { Some(TurnResult::Played(Card::DrawFour { color })) } else { None }
             },
@@ -117,25 +120,23 @@ impl<'h> Human {
         }
     }
 
-    fn get_color(&self) -> Option<CardColor> {
+    fn get_color() -> Option<CardColor> {
+        let mut input = String::new();
         loop {
-            let mut input = String::new();
-
             println!("Enter a color to choose, or type 'back' to go back to the decision screen.");
 
             stdin().read_line(&mut input).unwrap();
             let input = input.trim().to_lowercase();
 
-            return match input.as_str() {
-                "back" => None,
-                "red" => Some(CardColor::Red),
-                "blue" => Some(CardColor::Blue),
-                "green" => Some(CardColor::Green),
-                "yellow" => Some(CardColor::Yellow),
-                _ => {
-                    println!("Invalid input. Please try again.");
-                    continue;
-                }
+            if input == "back" {
+                return None;
+            }
+
+            if let Ok(color) = CardColor::from_str(&input) {
+                return Some(color);
+            } else {
+                println!("{} is not a valid color!", input);
+                continue;
             }
         }
     }
@@ -205,7 +206,20 @@ impl<R> Player for Ai<R> where R : RngCore {
     }
 
     fn execute_turn(&mut self, turn: &Turn) -> TurnResult {
+
+        let draw_or_pick = self.ran.gen_range(0..2);
+
+        if draw_or_pick == 0 {
+            return TurnResult::Drew(1);
+        }
+
         let index = self.ran.gen_range(0..turn.hand.len());
+
+        let card = turn.hand[index];
+
+        //let _ = turn.hand.as_slice().group_by();
+
+
 
         unimplemented!("AI not implemented yet")
     }
