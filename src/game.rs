@@ -21,7 +21,7 @@ pub struct Turn<'a> {
 
 pub enum TurnResult {
     Played(Card),
-    Drew(u8),
+    Drew,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -64,6 +64,7 @@ impl<'a> GameState<'a> {
                 }
                 _ => {
                     self.discard.push(top_card);
+                    println!("The top card is: {}", self.discard.last().unwrap());
                     break;
                 }
             }
@@ -71,11 +72,15 @@ impl<'a> GameState<'a> {
 
         loop {
 
+            std::thread::sleep(std::time::Duration::from_millis(600));
+
             self.current_player = self.next_player();
             let (current_player, player_hand) = self.players.get_mut(self.current_player).unwrap();
 
+            let playable_player_hand = &mut Self::get_playable_hand(player_hand, self.discard.last().unwrap(), self.to_draw);
+
             let turn = Turn {
-                hand: player_hand,
+                hand: playable_player_hand,
                 draw_pile: &mut self.deck,
                 discard_pile: &mut self.discard,
                 to_draw: self.to_draw,
@@ -85,11 +90,26 @@ impl<'a> GameState<'a> {
 
             match card_selection {
                 TurnResult::Played(card) => {
+                    player_hand.remove(player_hand.iter().position(|c| *c == card).unwrap());
                     self.discard.push(card);
-                    player_hand.remove(player_hand.iter().position(|c| c == &card).unwrap());
+
+                    println!("{} played {}", current_player.name(), card);
                 }
-                TurnResult::Drew(_) => {
+                TurnResult::Drew => {
+                    let to_draw = if self.to_draw > 0 {
+                        self.to_draw
+                    } else {
+                        1
+                    };
+
+                    let cards = &self.deck.draw_multiple(to_draw);
                     self.to_draw = 0;
+
+                    player_hand.extend(cards);
+
+                    println!("{} drew {} cards", current_player.name(), to_draw);
+
+                    current_player.observe_turn_skip(Some(cards.iter().collect()));
                 }
             }
 
@@ -110,6 +130,8 @@ impl<'a> GameState<'a> {
                 let next_player = &self.players.get_mut(self.current_player).unwrap().0;
 
                 next_player.observe_turn_skip(None);
+
+                println!("{}'s turn was skipped", next_player.name());
                 continue;
             }
 
@@ -126,7 +148,7 @@ impl<'a> GameState<'a> {
                 let next_player_index = self.next_player();
                 let (next_player, next_hand) = self.players.get_mut(next_player_index).unwrap();
 
-                let should_skip = !self.to_draw != 0 && !Self::can_play(next_hand, self.discard.last().unwrap());
+                let should_skip = !self.to_draw != 0 && !Self::contains_special_card(next_hand, self.discard.last().unwrap());
 
                 if should_skip {
                     let cards = self.deck.draw_multiple(self.to_draw);
@@ -134,6 +156,14 @@ impl<'a> GameState<'a> {
                     next_player.observe_turn_skip(Some(cards.iter().collect()));
 
                     next_hand.extend(cards);
+
+                    if self.to_draw > 0 {
+                        println!("{} drew {} cards", next_player.name(), self.to_draw);
+                    }
+                    else
+                    {
+                        println!("{}'s turn was skipped", next_player.name());
+                    }
 
                     self.to_draw = 0;
                     self.current_player = self.next_player();
@@ -149,6 +179,21 @@ impl<'a> GameState<'a> {
         }
     }
 
+    fn get_playable_hand(hand: &[Card], card: &Card, to_draw: u8) -> Vec<Card> {
+
+        if to_draw > 0 && matches!(card, Card::DrawTwo { .. } | Card::DrawFour { .. }) {
+            return hand.iter().filter(|c| **c == *card).copied().collect::<Vec<Card>>();
+        }
+
+        hand.iter()
+            .filter(|c| c.can_play_on(card))
+            .copied()
+            .collect::<Vec<Card>>()
+    }
+
+    fn contains_special_card(hand: &[Card], card: &Card) -> bool {
+        hand.iter().any(|c| *c == *card)
+    }
     fn can_play(hand: &mut Vec<Card>, card: &Card) -> bool {
         hand.iter().any(|c| c.can_play_on(card))
     }

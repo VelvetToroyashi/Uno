@@ -4,8 +4,6 @@ use crate::card::{Card, CardColor};
 use rand::{Rng, RngCore};
 use crate::game::{Turn, TurnResult};
 
-const AI_ACTION_PROBABILITY: [f32; 2] = [0.7, 0.3];
-
 pub struct Human {
     name: String,
 }
@@ -36,34 +34,26 @@ impl<'h> Human {
         }
     }
 
-    fn get_action(&mut self, turn: &Turn) -> TurnResult {
-        let mut input = String::new();
+fn get_action(&mut self, turn: &Turn) -> Option<TurnResult> {
+    let mut input = String::new();
 
-        loop {
-            stdin().read_line(&mut input).unwrap();
-            let input = input.trim();
+    loop {
+        stdin().read_line(&mut input).unwrap();
+        let input = input.trim().to_lowercase();
 
-            match input {
-                "Play" => {
-                    let action = self.get_card(turn);
-
-                    if let Some(play) = action {
-                        return play;
-                    }
-
-                    continue;
-                },
-                "Draw" => {
-                    let draw = if turn.to_draw > 0 { turn.to_draw } else { 1 };
-
-                    return TurnResult::Drew(draw);
-                },
-                _ => {
-                    println!("Invalid input. Please try again.");
-                }
+        match input.as_str() {
+            "play" => {
+                break self.get_card(turn)
+            },
+            "draw" => {
+                return Some(TurnResult::Drew);
+            },
+            _ => {
+                println!("Invalid input. Please try again.");
             }
         }
     }
+}
 
     fn get_card(&mut self, turn: &Turn) -> Option<TurnResult> {
         let mut input = String::new();
@@ -71,7 +61,7 @@ impl<'h> Human {
         println!("You can play the following cards:");
 
         for (i, card) in turn.hand.iter().enumerate() {
-            println!("{}: {}", i, card);
+            println!("{i}: {card}");
         }
 
         println!("Enter a number to select a card, or type 'back' to go back to the decision screen.");
@@ -135,7 +125,7 @@ impl<'h> Human {
             if let Ok(color) = CardColor::from_str(&input) {
                 return Some(color);
             } else {
-                println!("{} is not a valid color!", input);
+                println!("{input} is not a valid color!");
                 continue;
             }
         }
@@ -150,21 +140,28 @@ impl Player for Human {
     fn execute_turn(&mut self, turn: &Turn) -> TurnResult {
         println!("Its your turn.");
 
-        let can_play = turn.hand.len() > 0;
+        let can_play = !turn.hand.is_empty();
 
-        if can_play {
-            println!("What would you like to do? [Play], [Draw]")
-        }
-        else {
-            println!("You have no cards to play. You must draw.");
+        loop {
+            if can_play {
+                println!("What would you like to do? [Play], [Draw]");
+            }
+            else {
+                println!("You have no cards to play. You must draw.");
+            }
+
+            if can_play {
+                let action = self.get_action(turn);
+
+                if let Some(action) = action {
+                    break action;
+                }
+            }
+            else {
+                break TurnResult::Drew
+            }
         }
 
-        if can_play {
-            self.get_action(turn)
-        }
-        else {
-            TurnResult::Drew(1)
-        }
     }
 
     fn observe_turn(&self, other: &dyn Player, card: &Card) {
@@ -177,7 +174,7 @@ impl Player for Human {
                 println!("You drew a {}.", observed_cards[0]);
             }
             else {
-                println!("You drew {} cards. ({:?})", observed_cards.len(), observed_cards);
+                println!("You drew {} cards. [{}]", observed_cards.len(), observed_cards.iter().skip(1).fold(observed_cards[0].to_string(), |acc, card| acc + &format!(", {card}")));
             }
         }
         else {
@@ -200,28 +197,43 @@ impl<R> Ai<R> where R: RngCore {
     }
 }
 
+
 impl<R> Player for Ai<R> where R : RngCore {
     fn name(&self) -> &str {
         &self.name
     }
 
     fn execute_turn(&mut self, turn: &Turn) -> TurnResult {
+        let draw_or_pick = self.ran.gen_range(0..=100);
 
-        let draw_or_pick = self.ran.gen_range(0..2);
-
-        if draw_or_pick == 0 {
-            return TurnResult::Drew(1);
+        if draw_or_pick <= 30 || turn.hand.is_empty() {
+            return TurnResult::Drew;
         }
 
         let index = self.ran.gen_range(0..turn.hand.len());
 
-        let _card = turn.hand[index];
+        let picked_card = turn.hand[index];
 
-        //let _ = turn.hand.as_slice().group_by();
+        // order the collection by length of the group
+        let preferred_color = turn.hand
+            .iter()
+            .filter_map(|c| c.color())
+            .collect::<Vec<CardColor>>()
+            .group_by(|c, n| c == n)
+            .max_by_key(|item| item.len())
+            .map_or(CardColor::Red, |color| color[0]);
 
-
-
-        unimplemented!("AI not implemented yet")
+        match picked_card {
+            Card::Wild { .. } => {
+                TurnResult::Played(Card::Wild { color: Some(preferred_color) })
+            },
+            Card::DrawFour { .. } => {
+                TurnResult::Played(Card::DrawFour { color: Some(preferred_color) })
+            },
+            _ => {
+                TurnResult::Played(picked_card)
+            }
+        }
     }
 
     fn observe_turn(&self, _other: &dyn Player, _card: &Card) {

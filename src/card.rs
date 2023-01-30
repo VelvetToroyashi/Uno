@@ -19,7 +19,7 @@ pub enum CardValue {
     Nine,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Eq)]
 pub enum Card {
     Numeric { color: CardColor, value: CardValue },
     Skip { color: CardColor },
@@ -51,10 +51,8 @@ impl Deck {
         // 2 of each skip, reverse, draw two, 4 wild, 4 draw four
         let mut deck: Vec<Card> = Vec::with_capacity(108);
 
-        let mut i = 0;
-
-        for color in [CardColor::Red, CardColor::Green, CardColor::Blue, CardColor::Yellow]{
-            deck[i] = Card::Numeric { color, value: CardValue::Zero };
+        for color in [CardColor::Red, CardColor::Green, CardColor::Blue, CardColor::Yellow] {
+            deck.push(Card::Numeric { color, value: CardValue::Zero });
         }
 
         for color in [CardColor::Red, CardColor::Green, CardColor::Blue, CardColor::Yellow]
@@ -71,22 +69,19 @@ impl Deck {
                 CardValue::Nine,
             ]
             {
-                deck[i] = Card::Numeric { color, value, };
-                i += 1;
+                deck.push(Card::Numeric { color, value, });
             }
         }
 
         for color in [CardColor::Red, CardColor::Green, CardColor::Blue, CardColor::Yellow].iter() {
-            deck[i] = Card::Skip { color: *color };
-            deck[i + 1] = Card::Reverse { color: *color };
-            deck[i + 2] = Card::DrawTwo { color: *color };
-            i += 3;
+            deck.push(Card::Skip { color: *color });
+            deck.push(Card::Reverse { color: *color });
+            deck.push(Card::DrawTwo { color: *color });
         }
 
         for _ in 0..4 {
-            deck[i] = Card::Wild { color: None };
-            deck[i + 1] = Card::DrawFour { color: None };
-            i += 2;
+            deck.push(Card::Wild { color: None });
+            deck.push(Card::DrawFour { color: None });
         }
 
         deck
@@ -146,12 +141,12 @@ impl FromStr for CardColor {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Red" => Ok(CardColor::Red),
-            "Green" => Ok(CardColor::Green),
-            "Blue" => Ok(CardColor::Blue),
-            "Yellow" => Ok(CardColor::Yellow),
-            _ => Err(format!("{} is not a valid color", s)),
+        match s.to_lowercase().as_str() {
+            "red" => Ok(CardColor::Red),
+            "green" => Ok(CardColor::Green),
+            "blue" => Ok(CardColor::Blue),
+            "yellow" => Ok(CardColor::Yellow),
+            _ => Err(format!("{s} is not a valid color")),
         }
     }
 }
@@ -177,14 +172,31 @@ impl Display for Card {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
 
         match self {
-            Card::Numeric { color, value } => write!(f, "{} {}", color, value),
-            Card::Skip { color } => write!(f, "{} Skip", color),
-            Card::Reverse { color } => write!(f, "{} Reverse", color),
-            Card::DrawTwo { color } => write!(f, "{} Draw Two", color),
-            Card::Wild { .. } => write!(f, "Wild Card"),
-            Card::DrawFour { .. } => write!(f, "Draw Four"),
+            Card::Numeric { color, value } => write!(f, "{color} {value}"),
+            Card::Skip { color } => write!(f, "{color} Skip"),
+            Card::Reverse { color } => write!(f, "{color} Reverse"),
+            Card::DrawTwo { color } => write!(f, "{color} Draw Two"),
+            Card::Wild { color: Some(color)} => write!(f, "Wild Card ({color})"),
+            Card::DrawFour { color: Some(color) } => write!(f, "Draw Four ({color})"),
+            Card::Wild { color: None } => write!(f, "Wild Card"),
+            Card::DrawFour { color: None } => write!(f, "Draw Four"),
         }
+    }
+}
 
+impl PartialEq for Card {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Card::Numeric { color: c1, value: v1 }, Card::Numeric { color: c2, value: v2 }) => {
+                c1 == c2 && v1 == v2
+            }
+            (Card::Skip { color: c1 }, Card::Skip { color: c2 }) => c1 == c2,
+            (Card::Reverse { color: c1 }, Card::Reverse { color: c2 }) => c1 == c2,
+            (Card::DrawTwo { color: c1 }, Card::DrawTwo { color: c2 }) => c1 == c2,
+            (Card::Wild { .. }, Card::Wild { .. }) => true,
+            (Card::DrawFour { .. }, Card::DrawFour { .. }) => true,
+            _ => false,
+        }
     }
 }
 
@@ -230,11 +242,10 @@ impl Card {
             (Skip { color: _ }, Skip { color: _ }) => true,
             (Reverse { color: _ }, Reverse { color: _ }) => true,
             (DrawTwo { color: _ }, DrawTwo { color: _ }) => true,
-            (_, Wild { color: _ }) => true,
-            (_, DrawFour { color: _ }) => true,
+            (Wild { color: _ }, _) => true,
+            (DrawFour { color: _ }, _) => true,
             (_, _) => {
-                self.color().expect("special card has no color")
-                    == rhs.color().expect("special card has no color")
+                self.color() == rhs.color()
             }
         }
     }
