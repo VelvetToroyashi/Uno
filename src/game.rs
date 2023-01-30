@@ -71,7 +71,9 @@ impl<'a> GameState<'a> {
         }
 
         loop {
-            std::thread::sleep(std::time::Duration::from_millis(600));
+            std::thread::sleep(std::time::Duration::from_millis(800));
+
+            Self::ensure_drawable_deck(&mut self.deck, &mut self.discard, self.to_draw);
 
             self.current_player = self.next_player();
 
@@ -86,7 +88,7 @@ impl<'a> GameState<'a> {
                 player_hand.extend(draw);
                 current_player.observe_turn_skip(Some(draw.iter().collect()));
 
-                println!("{} drew {} cards", current_player.name(), self.to_draw);
+                println!("{} drew {} cards ({} cards in deck, {} in discard)", current_player.name(), self.to_draw, self.deck.cards.len(), self.discard.len());
 
                 self.to_draw = 0;
                 continue;
@@ -171,8 +173,26 @@ impl<'a> GameState<'a> {
     fn contains_special_card(hand: &[Card], card: &Card) -> bool {
         hand.iter().any(|c| *c == *card)
     }
-    fn can_play(hand: &mut Vec<Card>, card: &Card) -> bool {
-        hand.iter().any(|c| c.can_play_on(card))
+
+    fn ensure_drawable_deck(deck: &mut Deck, discard: &mut Vec<Card>, to_draw: u8) {
+        if (deck.cards.len() as u8) >= to_draw {
+            return;
+        }
+
+        if (discard.len() as u8) >= to_draw {
+            let from_discard = discard.drain(..discard.len());
+            deck.cards.extend(from_discard);
+            deck.shuffle();
+
+        } else { // Should this be a panic case?
+            discard.drain(..discard.len()); // Keep the last card
+
+            // push a supplementary deck
+            let mut new_deck = Deck::generate();
+            deck.cards.extend(new_deck.cards);
+
+            deck.shuffle();
+        }
     }
 
     fn next_player(&self) -> usize{
