@@ -8,3 +8,9 @@ edition = "2021"
 [dependencies]
 rand = "0.8.5"
 #termion = "2.0.1"
+
+[profile.release]
+strip = true  # Automatically strip symbols from the binary.
+opt-level = "z"  # Optimize for size.
+lto = true  # Link-time optimization.
+codegen-units = 1
