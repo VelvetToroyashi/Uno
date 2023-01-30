@@ -176,12 +176,12 @@ impl<'a> GameState<'a> {
         }
 
         if (discard.len() as u8) >= to_draw {
-            let from_discard = discard.drain(..discard.len());
+            let from_discard = discard.drain(..discard.len() - 1);
             deck.cards.extend(from_discard);
             deck.shuffle();
 
         } else { // Should this be a panic case?
-            discard.drain(..discard.len()); // Keep the last card
+            discard.drain(..discard.len() - 1); // Keep the last card
 
             // push a supplementary deck
             let new_deck = Deck::generate();
