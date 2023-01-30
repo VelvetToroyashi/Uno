@@ -1,5 +1,5 @@
-use std::borrow::{Borrow, BorrowMut};
-use std::thread::current;
+
+
 use crate::card::{Card, Deck};
 use crate::player::Player;
 
@@ -15,8 +15,6 @@ pub struct GameState<'a> {
 pub struct Turn<'a> {
     pub to_draw: u8,
     pub hand: &'a mut Vec<Card>,
-    draw_pile: &'a mut Deck,
-    discard_pile: &'a mut Vec<Card>,
 }
 
 pub enum TurnResult {
@@ -96,8 +94,6 @@ impl<'a> GameState<'a> {
 
             let turn = Turn {
                 hand: playable_player_hand,
-                draw_pile: &mut self.deck,
-                discard_pile: &mut self.discard,
                 to_draw: self.to_draw,
             };
 
@@ -188,7 +184,7 @@ impl<'a> GameState<'a> {
             discard.drain(..discard.len()); // Keep the last card
 
             // push a supplementary deck
-            let mut new_deck = Deck::generate();
+            let new_deck = Deck::generate();
             deck.cards.extend(new_deck.cards);
 
             deck.shuffle();

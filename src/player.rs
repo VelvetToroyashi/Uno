@@ -91,18 +91,18 @@ fn get_action(&mut self, turn: &Turn) -> Option<TurnResult> {
             }
         };
 
-        let card = turn.hand[index];
+        let mut card = turn.hand[index];
 
         match card {
             Card::Wild { .. } => {
                 let color = Human::get_color();
 
-                if color.is_some() { Some(TurnResult::Played(Card::Wild { color })) } else { None }
+                color.map(|color| TurnResult::Played(*card.with_color(color).unwrap()))
             },
             Card::DrawFour { .. } => {
                 let color = Human::get_color();
 
-                if color.is_some() { Some(TurnResult::Played(Card::DrawFour { color })) } else { None }
+                color.map(|color| TurnResult::Played(*card.with_color(color).unwrap()))
             },
             _ => {
                 Some(TurnResult::Played(card))
@@ -212,7 +212,7 @@ impl<R> Player for Ai<R> where R : RngCore {
 
         let index = self.ran.gen_range(0..turn.hand.len());
 
-        let picked_card = turn.hand[index];
+        let mut picked_card = turn.hand[index];
 
         // order the collection by length of the group
         let preferred_color = turn.hand
@@ -225,10 +225,10 @@ impl<R> Player for Ai<R> where R : RngCore {
 
         match picked_card {
             Card::Wild { .. } => {
-                TurnResult::Played(Card::Wild { color: Some(preferred_color) })
+                TurnResult::Played(*picked_card.with_color(preferred_color).unwrap())
             },
             Card::DrawFour { .. } => {
-                TurnResult::Played(Card::DrawFour { color: Some(preferred_color) })
+                TurnResult::Played(*picked_card.with_color(preferred_color).unwrap())
             },
             _ => {
                 TurnResult::Played(picked_card)

@@ -95,10 +95,6 @@ impl Deck {
         self.cards.pop()
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.cards.is_empty()
-    }
-
     pub fn draw_multiple(&mut self, count: u8) -> Vec<Card> {
         let mut cards = vec![];
 
@@ -109,13 +105,6 @@ impl Deck {
         }
 
         cards
-    }
-
-    pub fn reinsert(&mut self, mut cards: Vec<Card>) {
-        cards.shuffle(&mut rand::thread_rng());
-
-        self.cards.append(&mut cards);
-        self.cards.rotate_right(cards.len());
     }
 
     pub fn reinsert_random(&mut self, card: Card) {
@@ -212,14 +201,14 @@ impl Card {
         }
     }
 
-    pub fn with_color(&mut self, color: &CardColor) -> Option<&Card> {
+    pub fn with_color(&mut self, color: CardColor) -> Option<&Card> {
         match self {
-            Card::Wild { color: _ } => {
-                *self = Card::Wild { color: Some(*color) };
+            Card::Wild { .. } => {
+                *self = Card::Wild { color: Some(color) };
                 Some(self)
             }
-            Card::DrawFour { color: _ } => {
-                *self = Card::DrawFour { color: Some(*color) };
+            Card::DrawFour { .. } => {
+                *self = Card::DrawFour { color: Some(color) };
                 Some(self)
             }
             _ => None,
