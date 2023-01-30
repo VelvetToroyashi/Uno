@@ -39,7 +39,7 @@ fn get_action(&mut self, turn: &Turn) -> Option<TurnResult> {
 
     loop {
         stdin().read_line(&mut input).unwrap();
-        let input = input.trim().to_lowercase();
+        let mut input = input.trim().to_lowercase();
 
         match input.as_str() {
             "play" => {
@@ -49,6 +49,7 @@ fn get_action(&mut self, turn: &Turn) -> Option<TurnResult> {
                 return Some(TurnResult::Drew);
             },
             _ => {
+                input.clear();
                 println!("Invalid input. Please try again.");
             }
         }
@@ -68,7 +69,7 @@ fn get_action(&mut self, turn: &Turn) -> Option<TurnResult> {
 
         let index = loop {
             stdin().read_line(&mut input).unwrap();
-            let input = input.trim().to_lowercase();
+            let mut input = input.trim().to_lowercase();
 
             if input == "back" {
                 return None;
@@ -78,6 +79,7 @@ fn get_action(&mut self, turn: &Turn) -> Option<TurnResult> {
             match input.parse::<usize>() {
                 Ok(index) => {
                     if index >= turn.hand.len() {
+                        input.clear();
                         println!("Invalid input. Please try again.");
                         continue;
                     }
@@ -85,6 +87,7 @@ fn get_action(&mut self, turn: &Turn) -> Option<TurnResult> {
                     break index;
                 },
                 Err(_) => {
+                    input.clear();
                     println!("Invalid input. Please try again.");
                     continue;
                 }
