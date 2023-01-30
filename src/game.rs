@@ -1,5 +1,5 @@
-
-
+use std::borrow::{Borrow, BorrowMut};
+use std::thread::current;
 use crate::card::{Card, Deck};
 use crate::player::Player;
 
@@ -71,13 +71,26 @@ impl<'a> GameState<'a> {
         }
 
         loop {
-
             std::thread::sleep(std::time::Duration::from_millis(600));
 
             self.current_player = self.next_player();
+
+            // Play for the current player
             let (current_player, player_hand) = self.players.get_mut(self.current_player).unwrap();
 
             let playable_player_hand = &mut Self::get_playable_hand(player_hand, self.discard.last().unwrap(), self.to_draw);
+
+            if self.to_draw > 0 && !Self::contains_special_card(playable_player_hand, self.discard.last().unwrap()) {
+                let draw = &self.deck.draw_multiple(self.to_draw);
+
+                player_hand.extend(draw);
+                current_player.observe_turn_skip(Some(draw.iter().collect()));
+
+                println!("{} drew {} cards", current_player.name(), self.to_draw);
+
+                self.to_draw = 0;
+                continue;
+            }
 
             let turn = Turn {
                 hand: playable_player_hand,
@@ -86,95 +99,59 @@ impl<'a> GameState<'a> {
                 to_draw: self.to_draw,
             };
 
-            let card_selection = current_player.execute_turn(&turn);
-
-            match card_selection {
+            match current_player.execute_turn(&turn) {
                 TurnResult::Played(card) => {
                     player_hand.remove(player_hand.iter().position(|c| *c == card).unwrap());
                     self.discard.push(card);
 
                     println!("{} played {}", current_player.name(), card);
+
+                    match card {
+                        Card::Skip { .. } => {
+
+                            self.current_player = self.next_player();
+                            let next_player = &self.players.get_mut(self.current_player).unwrap().0;
+
+                            next_player.observe_turn_skip(None);
+
+                            println!("{}'s turn was skipped", next_player.name());
+                            continue;
+                        }
+                        Card::Reverse { .. } => {
+                            self.direction = match self.direction {
+                                Direction::Clockwise => Direction::CounterClockwise,
+                                Direction::CounterClockwise => Direction::Clockwise,
+                            };
+                        }
+                        Card::DrawTwo { .. } => {
+                            self.to_draw += 2;
+                        }
+                        Card::DrawFour { .. } => {
+                            self.to_draw += 4;
+                        }
+                        _ => {}
+                    }
                 }
                 TurnResult::Drew => {
-                    let to_draw = if self.to_draw > 0 {
-                        self.to_draw
-                    } else {
-                        1
-                    };
+                    if self.to_draw == 0 {
+                        self.to_draw += 1;
+                    }
 
-                    let cards = &self.deck.draw_multiple(to_draw);
-                    self.to_draw = 0;
-
+                    let cards = &self.deck.draw_multiple(self.to_draw);
                     player_hand.extend(cards);
 
-                    println!("{} drew {} cards", current_player.name(), to_draw);
-
                     current_player.observe_turn_skip(Some(cards.iter().collect()));
+
+                    println!("{} drew {} card(s)", current_player.name(), cards.len());
+
+                    self.to_draw = 0;
                 }
-            }
+            };
 
             if player_hand.is_empty() {
                 println!("{} won!", current_player.name());
-
-                std::thread::sleep(std::time::Duration::from_secs(7));
+                std::thread::sleep(std::time::Duration::from_millis(4500));
                 std::process::exit(0);
-            }
-
-            if self.deck.is_empty() || self.to_draw > self.deck.cards.len() as u8 {
-                self.deck.reinsert(self.discard.drain(..self.discard.len()).collect());
-            }
-
-            if matches!(self.discard.last(), Some(Card::Skip { .. }))  {
-
-                self.current_player = self.next_player();
-                let next_player = &self.players.get_mut(self.current_player).unwrap().0;
-
-                next_player.observe_turn_skip(None);
-
-                println!("{}'s turn was skipped", next_player.name());
-                continue;
-            }
-
-            if matches!(card_selection, TurnResult::Played(_)) {
-                self.to_draw += match self.discard.last().unwrap() {
-                    Card::DrawTwo { .. } => 2,
-                    Card::DrawFour { .. } => 4,
-                    _ => 0,
-                };
-            }
-
-            if matches!(self.discard.last(), Some(Card::DrawTwo { .. })) || matches!(self.discard.last(), Some(Card::DrawFour { .. })) {
-
-                let next_player_index = self.next_player();
-                let (next_player, next_hand) = self.players.get_mut(next_player_index).unwrap();
-
-                let should_skip = !self.to_draw != 0 && !Self::contains_special_card(next_hand, self.discard.last().unwrap());
-
-                if should_skip {
-                    let cards = self.deck.draw_multiple(self.to_draw);
-
-                    next_player.observe_turn_skip(Some(cards.iter().collect()));
-
-                    next_hand.extend(cards);
-
-                    if self.to_draw > 0 {
-                        println!("{} drew {} cards", next_player.name(), self.to_draw);
-                    }
-                    else
-                    {
-                        println!("{}'s turn was skipped", next_player.name());
-                    }
-
-                    self.to_draw = 0;
-                    self.current_player = self.next_player();
-                }
-            }
-
-            if matches!(self.discard.last(), Some(Card::Reverse { .. })) {
-                self.direction = match self.direction {
-                    Direction::Clockwise => Direction::CounterClockwise,
-                    Direction::CounterClockwise => Direction::Clockwise,
-                };
             }
         }
     }
