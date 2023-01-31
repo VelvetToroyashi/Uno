@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8.5"
+enable-ansi-support = "0.2.1"
 #termion = "2.0.1"
 
 [profile.release]

@@ -2,7 +2,7 @@ use std::io::stdin;
 use std::str::FromStr;
 use crate::card::{Card, CardColor};
 use rand::{Rng, RngCore};
-use crate::game::{Turn, TurnResult};
+use crate::game::{GameState, Turn, TurnResult};
 
 pub struct Human {
     name: String,
@@ -177,7 +177,10 @@ impl Player for Human {
                 println!("You drew a {}.", observed_cards[0]);
             }
             else {
-                println!("You drew {} cards. [{}]", observed_cards.len(), observed_cards.iter().skip(1).fold(observed_cards[0].to_string(), |acc, card| acc + &format!(", {card}")));
+                println!("You drew {} cards. [{}]", observed_cards.len(), observed_cards
+                    .iter()
+                    .skip(1)
+                    .fold(GameState::get_colorized_card_name(*observed_cards[0]), |acc, card| acc + &format!(", {}", GameState::get_colorized_card_name(**card))))
             }
         }
         else {

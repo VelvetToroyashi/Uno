@@ -10,6 +10,8 @@ mod game;
 
 fn main() {
 
+    enable_ansi_support::enable_ansi_support().unwrap();
+
     println!("Welcome to Uno (CLI Edition!). The game will start shortly.");
 
     std::thread::sleep(std::time::Duration::from_millis(1500));
