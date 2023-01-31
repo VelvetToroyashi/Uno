@@ -215,8 +215,8 @@ impl<'a> GameState<'a> {
                 };
                 format!("\x1b[31mW\x1b[34mi\x1b[32ml\x1b[33md\x1b[0m ({formatted_color})")
             },
-
-            _ => format!("{card}"),
+            Card::Wild { color: None } => "\x1b[31mW\x1b[34mi\x1b[32ml\x1b[33md\x1b[0m".to_string(),
+            Card::DrawFour { color: None } => "\x1b[31mDr\x1b[34maw \x1b[32mFo\x1b[33mur\x1b[0m".to_string(),
         }
     }
 

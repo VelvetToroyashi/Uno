@@ -62,6 +62,7 @@ fn get_action(&mut self, turn: &Turn) -> Option<TurnResult> {
         println!("You can play the following cards:");
 
         for (i, card) in turn.hand.iter().enumerate() {
+            let card = GameState::get_colorized_card_name(*card);
             println!("{i}: {card}");
         }
 
@@ -174,7 +175,7 @@ impl Player for Human {
     fn observe_turn_skip(&self, observed_cards: Option<Vec<&Card>>) {
         if let Some(observed_cards) = observed_cards {
             if observed_cards.len() == 1 {
-                println!("You drew a {}.", observed_cards[0]);
+                println!("You drew a {}.", GameState::get_colorized_card_name(*observed_cards[0]));
             }
             else {
                 println!("You drew {} cards. [{}]", observed_cards.len(), observed_cards
