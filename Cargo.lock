@@ -71,7 +71,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "uno_server"
+name = "uno_cli"
 version = "0.1.0"
 dependencies = [
  "enable-ansi-support",
