@@ -27,7 +27,7 @@ const AI_NAMES: [&str; 20] = [
     "Asuna", "Kirito", "Kazuto", "Shana", "Yoshino", "Yui", "Touka", "Rize", "Mikasa", "Levi",
 ];
 
-impl<'h> Human {
+impl Human {
     pub fn new(name: String) -> Human {
         Human {
             name,
@@ -39,9 +39,9 @@ fn get_action(&mut self, turn: &Turn) -> Option<TurnResult> {
 
     loop {
         stdin().read_line(&mut input).unwrap();
-        let mut input = input.trim().to_lowercase();
+        let cur_input = input.trim().to_lowercase();
 
-        match input.as_str() {
+        match cur_input.as_str() {
             "play" => {
                 break self.get_card(turn)
             },
@@ -69,14 +69,14 @@ fn get_action(&mut self, turn: &Turn) -> Option<TurnResult> {
 
         let index = loop {
             stdin().read_line(&mut input).unwrap();
-            let mut input = input.trim().to_lowercase();
+            let cur_input = input.trim().to_lowercase();
 
-            if input == "back" {
+            if cur_input == "back" {
                 return None;
             }
 
             // TODO: Clear?
-            match input.parse::<usize>() {
+            match cur_input.parse::<usize>() {
                 Ok(index) => {
                     if index >= turn.hand.len() {
                         input.clear();
@@ -119,16 +119,16 @@ fn get_action(&mut self, turn: &Turn) -> Option<TurnResult> {
             println!("Enter a color to choose, or type 'back' to go back to the decision screen.");
 
             stdin().read_line(&mut input).unwrap();
-            let input = input.trim().to_lowercase();
+            let cur_input = input.trim().to_lowercase();
 
-            if input == "back" {
+            if cur_input == "back" {
                 return None;
             }
 
-            if let Ok(color) = CardColor::from_str(&input) {
+            if let Ok(color) = CardColor::from_str(&cur_input) {
                 return Some(color);
             } else {
-                println!("{input} is not a valid color!");
+                println!("{cur_input} is not a valid color!");
                 continue;
             }
         }

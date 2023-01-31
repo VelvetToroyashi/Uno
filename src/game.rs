@@ -171,7 +171,7 @@ impl<'a> GameState<'a> {
     }
 
     fn ensure_drawable_deck(deck: &mut Deck, discard: &mut Vec<Card>, to_draw: u8) {
-        if (deck.cards.len() as u8) >= to_draw {
+        if discard.len() < 2 && (deck.cards.len() as u8) >= to_draw {
             return;
         }
 
