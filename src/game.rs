@@ -60,9 +60,12 @@ impl<'a> GameState<'a> {
                 Card::DrawFour { color: _ } => {
                     self.deck.reinsert_random(top_card);
                 }
+                Card::Skip { .. } => {
+                    self.deck.reinsert_random(top_card);
+                }
                 _ => {
                     self.discard.push(top_card);
-                    println!("The top card is: {}", self.discard.last().unwrap());
+                    println!("The top card is: {}", Self::get_colorized_card_name(*self.discard.last().unwrap()));
                     break;
                 }
             }
@@ -86,7 +89,7 @@ impl<'a> GameState<'a> {
                 player_hand.extend(draw);
                 current_player.observe_turn_skip(Some(draw.iter().collect()));
 
-                println!("{} drew {} cards ({} cards in deck, {} in discard)", current_player.name(), self.to_draw, self.deck.cards.len(), self.discard.len());
+                println!("{} drew {} cards", current_player.name(), self.to_draw);
 
                 self.to_draw = 0;
                 continue;
