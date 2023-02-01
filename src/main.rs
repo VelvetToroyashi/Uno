@@ -3,7 +3,7 @@
 use std::io::{stdout, Write};
 use rand::thread_rng;
 use crate::game::GameState;
-use crate::player::Player;
+use crate::player::{AIDifficulty, Player};
 
 mod card;
 mod player;
@@ -11,15 +11,21 @@ mod game;
 
 fn main() {
 
+    let difficulty = get_difficulty();
+
     enable_ansi_support::enable_ansi_support().unwrap();
 
     println!("Welcome to Uno (CLI Edition!). The game will start shortly.");
 
     std::thread::sleep(std::time::Duration::from_millis(1500));
 
-    let ai_one = &mut player::Ai::new(thread_rng());
-    let ai_two = &mut player::Ai::new(thread_rng());
-    let ai_three = &mut player::Ai::new(thread_rng());
+    let mut rng = &mut thread_rng();
+    let mut rng2 = &mut thread_rng();
+    let mut rng3 = &mut thread_rng();
+
+    let ai_one = &mut player::Ai::new(&mut rng, AIDifficulty::Easy);
+    let ai_two = &mut player::Ai::new(&mut rng2, AIDifficulty::Medium);
+    let ai_three = &mut player::Ai::new(&mut rng3, AIDifficulty::Hard);
 
     println!("Lets start with your name: ");
     let mut name = String::new();
@@ -53,5 +59,38 @@ fn main() {
 
         print!("\x1B[2J\x1B[1;1H");
     }
+}
 
+fn get_difficulty() -> AIDifficulty {
+    if std::env::args().len() > 1 {
+        let arg = std::env::args().nth(1).unwrap();
+
+        return match arg.to_lowercase().as_str() {
+            "e" | "easy" => AIDifficulty::Easy,
+            "m" | "medium" => AIDifficulty::Medium,
+            "h" | "hard" => AIDifficulty::Hard,
+            _ => {
+                println!("Invalid difficulty. Defaulting to Medium.");
+                AIDifficulty::Medium
+            }
+        }
+    }
+
+    let mut input = String::new();
+
+    loop {
+        println!("Choose a difficulty: [E]asy, [M]edium, [H]ard");
+
+        std::io::stdin().read_line(&mut input).unwrap();
+
+        match input.trim().to_lowercase().as_str() {
+            "e" | "easy" => return AIDifficulty::Easy,
+            "m" | "medium" => return AIDifficulty::Medium,
+            "h" | "hard" => return AIDifficulty::Hard,
+            _ => {
+                println!("Invalid input. Please try again.");
+                input.clear();
+            }
+        }
+    }
 }

@@ -200,6 +200,18 @@ impl Card {
             Card::DrawFour { color } => *color,
         }
     }
+    
+    pub fn is_equivalent(&self, other: &Card) -> bool {
+        match (self, other) {
+            (Card::Numeric { value: v1, .. }, Card::Numeric { value: v2, .. }) => v1 == v2,
+            (Card::Skip { .. }, Card::Skip { .. }) => true,
+            (Card::Reverse { .. }, Card::Reverse { .. }) => true,
+            (Card::DrawTwo { .. }, Card::DrawTwo { .. }) => true,
+            (Card::Wild { .. }, Card::Wild { .. }) => true,
+            (Card::DrawFour { .. }, Card::DrawFour { .. }) => true,
+            _ => false,
+        }
+    }
 
     pub fn with_color(&mut self, color: CardColor) -> Option<&Card> {
         match self {

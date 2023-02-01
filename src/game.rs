@@ -14,7 +14,9 @@ pub struct GameState<'a> {
 
 pub struct Turn<'a> {
     pub to_draw: u8,
-    pub hand: &'a mut Vec<Card>,
+    pub full_hand: &'a Vec<Card>,
+    pub playable_hand: &'a mut Vec<Card>,
+    pub last_card: Card,
 }
 
 pub enum TurnResult {
@@ -96,8 +98,10 @@ impl<'a> GameState<'a> {
             }
 
             let turn = Turn {
-                hand: playable_player_hand,
+                full_hand: &player_hand.iter().copied().collect(),
+                playable_hand: playable_player_hand,
                 to_draw: self.to_draw,
+                last_card: *self.discard.last().unwrap(),
             };
 
             match current_player.execute_turn(&turn) {
@@ -245,7 +249,7 @@ pub fn get_colorized_card_name(card: Card) -> String {
             deck.shuffle();
 
         } else { // Should this be a panic case?
-            discard.drain(..discard.len() - 1); // Keep the last card
+            discard.drain(..discard.len() - 4); // Keep the last four cards
 
             // push a supplementary deck
             let new_deck = Deck::generate();
