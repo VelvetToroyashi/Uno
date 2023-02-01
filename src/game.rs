@@ -41,7 +41,7 @@ impl<'a> GameState<'a> {
         }
     }
 
-    pub fn start(&mut self) -> ! {
+    pub fn start(&mut self) -> String {
         self.deck.shuffle();
 
         for (_, hand) in self.players.iter_mut() {
@@ -150,75 +150,73 @@ impl<'a> GameState<'a> {
             };
 
             if player_hand.is_empty() {
-                println!("{} won!", current_player.name());
-                std::thread::sleep(std::time::Duration::from_millis(4500));
-                std::process::exit(0);
+                return current_player.name().to_string();
             }
         }
     }
 
-    pub fn get_colorized_card_name(card: Card) -> String {
-        use crate::card::CardColor::*;
-        match card {
-            Card::DrawFour { color: Some(color) } =>
-                {
-                    let formatted_color = match color {
-                        Red => format!("\x1b[31m{color}\x1b[0m"),
-                        Blue => format!("\x1b[34m{color}\x1b[0m"),
-                        Green => format!("\x1b[32m{color}\x1b[0m"),
-                        Yellow => format!("\x1b[33m{color}\x1b[0m"),
-                    };
-                    format!("\x1b[31mDr\x1b[34maw \x1b[32mFo\x1b[33mur\x1b[0m ({formatted_color})")
-                },
-            Card::DrawTwo { color } =>
-            {
-                match color {
-                    Red => format!("\x1b[31m{card}\x1b[0m"),
-                    Blue => format!("\x1b[34m{card}\x1b[0m"),
-                    Green => format!("\x1b[32m{card}\x1b[0m"),
-                    Yellow => format!("\x1b[33m{card}\x1b[0m"),
-                }
-            },
-            Card::Skip { color } =>
-            {
-                match color {
-                    Red => format!("\x1b[31m{card}\x1b[0m"),
-                    Blue => format!("\x1b[34m{card}\x1b[0m"),
-                    Green => format!("\x1b[32m{card}\x1b[0m"),
-                    Yellow => format!("\x1b[33m{card}\x1b[0m"),
-                }
-            },
-            Card::Reverse { color } =>
-            {
-                match color {
-                    Red => format!("\x1b[31m{card}\x1b[0m"),
-                    Blue => format!("\x1b[34m{card}\x1b[0m"),
-                    Green => format!("\x1b[32m{card}\x1b[0m"),
-                    Yellow => format!("\x1b[33m{card}\x1b[0m"),
-                }
-            },
-            Card::Numeric { color, .. } =>
-            {
-                match color {
-                    Red => format!("\x1b[31m{card}\x1b[0m"),
-                    Blue => format!("\x1b[34m{card}\x1b[0m"),
-                    Green => format!("\x1b[32m{card}\x1b[0m"),
-                    Yellow => format!("\x1b[33m{card}\x1b[0m"),
-                }
-            },
-            Card::Wild { color: Some(color) } => {
-                let formatted_color = match color {
-                    Red => format!("\x1b[31m{color}\x1b[0m"),
-                    Blue => format!("\x1b[34m{color}\x1b[0m"),
-                    Green => format!("\x1b[32m{color}\x1b[0m"),
-                    Yellow => format!("\x1b[33m{color}\x1b[0m"),
-                };
-                format!("\x1b[31mW\x1b[34mi\x1b[32ml\x1b[33md\x1b[0m ({formatted_color})")
-            },
-            Card::Wild { color: None } => "\x1b[31mW\x1b[34mi\x1b[32ml\x1b[33md\x1b[0m".to_string(),
-            Card::DrawFour { color: None } => "\x1b[31mDr\x1b[34maw \x1b[32mFo\x1b[33mur\x1b[0m".to_string(),
-        }
+pub fn get_colorized_card_name(card: Card) -> String {
+    use crate::card::CardColor::*;
+    match card {
+        Card::DrawFour { color: Some(color) } =>
+        {
+            let formatted_color = match color {
+                Red => format!("\x1b[31m{color}\x1b[0m"),
+                Blue => format!("\x1b[34m{color}\x1b[0m"),
+                Green => format!("\x1b[32m{color}\x1b[0m"),
+                Yellow => format!("\x1b[33m{color}\x1b[0m"),
+            };
+            format!("\x1b[31mDr\x1b[34maw \x1b[32mFo\x1b[33mur\x1b[0m ({formatted_color})")
+        },
+        Card::DrawTwo { color } =>
+        {
+            match color {
+                Red => format!("\x1b[31m{card}\x1b[0m"),
+                Blue => format!("\x1b[34m{card}\x1b[0m"),
+                Green => format!("\x1b[32m{card}\x1b[0m"),
+                Yellow => format!("\x1b[33m{card}\x1b[0m"),
+            }
+        },
+        Card::Skip { color } =>
+        {
+            match color {
+                Red => format!("\x1b[31m{card}\x1b[0m"),
+                Blue => format!("\x1b[34m{card}\x1b[0m"),
+                Green => format!("\x1b[32m{card}\x1b[0m"),
+                Yellow => format!("\x1b[33m{card}\x1b[0m"),
+            }
+        },
+        Card::Reverse { color } =>
+        {
+            match color {
+                Red => format!("\x1b[31m{card}\x1b[0m"),
+                Blue => format!("\x1b[34m{card}\x1b[0m"),
+                Green => format!("\x1b[32m{card}\x1b[0m"),
+                Yellow => format!("\x1b[33m{card}\x1b[0m"),
+            }
+        },
+        Card::Numeric { color, .. } =>
+        {
+            match color {
+                Red => format!("\x1b[31m{card}\x1b[0m"),
+                Blue => format!("\x1b[34m{card}\x1b[0m"),
+                Green => format!("\x1b[32m{card}\x1b[0m"),
+                Yellow => format!("\x1b[33m{card}\x1b[0m"),
+            }
+        },
+        Card::Wild { color: Some(color) } => {
+            let formatted_color = match color {
+                Red => format!("\x1b[31m{color}\x1b[0m"),
+                Blue => format!("\x1b[34m{color}\x1b[0m"),
+                Green => format!("\x1b[32m{color}\x1b[0m"),
+                Yellow => format!("\x1b[33m{color}\x1b[0m"),
+            };
+            format!("\x1b[31mW\x1b[34mi\x1b[32ml\x1b[33md\x1b[0m ({formatted_color})")
+        },
+        Card::Wild { color: None } => "\x1b[31mW\x1b[34mi\x1b[32ml\x1b[33md\x1b[0m".to_string(),
+        Card::DrawFour { color: None } => "\x1b[31mDr\x1b[34maw \x1b[32mFo\x1b[33mur\x1b[0m".to_string(),
     }
+}
 
     fn get_playable_hand(hand: &[Card], card: &Card, to_draw: u8) -> Vec<Card> {
 
