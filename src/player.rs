@@ -439,7 +439,17 @@ fn easy(&mut self, turn: &Turn) -> TurnResult {
             TurnResult::Played(current_color_cards[index])
         } else {
             let index = self.ran.gen_range(0..turn.playable_hand.len());
-            TurnResult::Played(turn.playable_hand[index])
+
+            let card = turn.playable_hand[index];
+
+            if let Card::DrawFour { .. } = card {
+                return TurnResult::Played(Card::DrawFour { color: Some(last_color) });
+            }
+            else if let Card::Wild { .. } = card {
+                return TurnResult::Played(Card::Wild { color: Some(last_color) });
+            }
+
+            TurnResult::Played(card)
         }
     }
 }
