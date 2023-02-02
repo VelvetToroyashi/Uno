@@ -313,14 +313,7 @@ fn easy(&mut self, turn: &Turn) -> TurnResult {
         let should_stack = matches!(turn.last_card, Card::DrawTwo { .. } | Card::DrawFour { .. });
 
         if should_stack {
-            let preferred_color = turn.full_hand
-                .iter()
-                .filter_map(|c| c.color())
-                .filter(|c| *c != last_color)
-                .collect::<Vec<CardColor>>()
-                .group_by(|c, n| c == n)
-                .max_by_key(|item| item.len())
-                .map_or(last_color, |color| color[0]);
+            let preferred_color = Self::get_preferable_color(turn.full_hand, last_color);
 
             if matches!(turn.last_card, Card::DrawFour { .. })
             {
@@ -378,7 +371,6 @@ fn easy(&mut self, turn: &Turn) -> TurnResult {
             .collect::<Vec<Card>>();
 
 
-
         let plan_to_change = self.ran.gen_range(0..=100) % std::cmp::max(50 - (turn.full_hand.len() * 2), 1) == 0;
 
         let weights = vec![0.4, 0.1, 0.35, 0.05, 0.15];
@@ -386,18 +378,10 @@ fn easy(&mut self, turn: &Turn) -> TurnResult {
         let card_types = [Card::DrawTwo { color: CardColor::Red }, Card::Skip { color: CardColor::Red }, Card::DrawFour { color: None }, Card::Reverse { color: CardColor::Red }, Card::Wild { color: None }];
 
         if can_afford_change && plan_to_change {
-
             let index = self.ran.gen_range(0..color_changing_cards.len());
             let mut picked_card = color_changing_cards[index];
 
-            let preferred_color = turn.full_hand
-                .iter()
-                .filter_map(|c| c.color())
-                .filter(|c| *c != last_color)
-                .collect::<Vec<CardColor>>()
-                .group_by(|c, n| c == n)
-                .max_by_key(|item| item.len())
-                .map_or(last_color, |color| color[0]);
+            let preferred_color = Self::get_preferable_color(turn.full_hand, last_color);
 
             let weight_idx = &WeightedIndex::new(&weights).unwrap();
             let mut weight_iter = self.ran.sample_iter(weight_idx);
@@ -442,15 +426,33 @@ fn easy(&mut self, turn: &Turn) -> TurnResult {
 
             let card = turn.playable_hand[index];
 
+            // N.B. This may be disadvantageous if the "preferable" color happens to be something we have
+            // few of, but the goal of the "hard" AI is to make the game as frustrating for the player as possible
+            // even if it comes at the cost of us making a bad move like this.
+            let preferable_color = Self::get_preferable_color(turn.full_hand, last_color);
+
             if let Card::DrawFour { .. } = card {
-                return TurnResult::Played(Card::DrawFour { color: Some(last_color) });
+                return TurnResult::Played(Card::DrawFour { color: Some(preferable_color) });
             }
             else if let Card::Wild { .. } = card {
-                return TurnResult::Played(Card::Wild { color: Some(last_color) });
+                return TurnResult::Played(Card::Wild { color: Some(preferable_color) });
             }
 
             TurnResult::Played(card)
         }
+    }
+
+    /// Attempts to get the most preferable card color (e.g. the color the player has the most of, that isn't the current color).
+    fn get_preferable_color(hand: &Vec<Card>, last_color: CardColor) -> CardColor {
+
+        hand.iter()
+            .filter_map(|c| c.color())
+            .filter(|c| *c != last_color)
+            .collect::<Vec<CardColor>>()
+            .group_by(|c, n| c == n)
+            .max_by_key(|item| item.len())
+            .map_or(last_color, |color| color[0])
+
     }
 }
 
