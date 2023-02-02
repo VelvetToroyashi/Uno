@@ -66,9 +66,9 @@ fn get_difficulty() -> AIDifficulty {
         let arg = std::env::args().nth(1).unwrap();
 
         return match arg.to_lowercase().as_str() {
-            "e" | "easy" => AIDifficulty::Easy,
-            "m" | "medium" => AIDifficulty::Medium,
-            "h" | "hard" => AIDifficulty::Hard,
+            "-e" | "--easy" => AIDifficulty::Easy,
+            "-m" | "--medium" => AIDifficulty::Medium,
+            "-h" | "--hard" => AIDifficulty::Hard,
             _ => {
                 println!("Invalid difficulty. Defaulting to Medium.");
                 AIDifficulty::Medium
