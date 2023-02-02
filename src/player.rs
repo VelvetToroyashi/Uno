@@ -226,26 +226,26 @@ impl<'a, R> Ai<'a, R> where R: RngCore {
     }
 
     // Picks at random.
-    fn easy(&mut self, turn: &Turn) -> TurnResult {
-        let index = self.ran.gen_range(0..turn.playable_hand.len());
+fn easy(&mut self, turn: &Turn) -> TurnResult {
+    let index = self.ran.gen_range(0..turn.playable_hand.len());
 
-        let mut picked_card = turn.playable_hand[index];
+    let mut picked_card = turn.playable_hand[index];
 
-        // order the collection by length of the group
-        let preferred_color = Self::get_preferred_color(self, turn);
+    // order the collection by length of the group
+    let preferred_color = Self::get_preferred_color(self, turn);
 
-        match picked_card {
-            Card::Wild { .. } => {
-                TurnResult::Played(*picked_card.with_color(preferred_color).unwrap())
-            },
-            Card::DrawFour { .. } => {
-                TurnResult::Played(*picked_card.with_color(preferred_color).unwrap())
-            },
-            _ => {
-                TurnResult::Played(picked_card)
-            }
+    match picked_card {
+        Card::Wild { .. } => {
+            TurnResult::Played(*picked_card.with_color(preferred_color).unwrap())
+        },
+        Card::DrawFour { .. } => {
+            TurnResult::Played(*picked_card.with_color(preferred_color).unwrap())
+        },
+        _ => {
+            TurnResult::Played(picked_card)
         }
     }
+}
 
     // Picks the card that will get rid of the most cards.
     fn medium(&mut self, turn: &Turn) -> TurnResult {
@@ -377,7 +377,9 @@ impl<'a, R> Ai<'a, R> where R: RngCore {
             .filter(|c| matches!(c, Card::Reverse { .. } | Card::Skip { .. } | Card::DrawTwo { .. } | Card::Wild { .. } | Card::DrawFour { .. }))
             .collect::<Vec<Card>>();
 
-        let plan_to_change = (self.ran.gen_range(0..=100) % (50 - (turn.full_hand.len() * 2))) == 0;
+
+
+        let plan_to_change = self.ran.gen_range(0..=100) % std::cmp::max(50 - (turn.full_hand.len() * 2), 1) == 0;
 
         let weights = vec![0.4, 0.1, 0.35, 0.05, 0.15];
 
