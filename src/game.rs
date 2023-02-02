@@ -248,8 +248,9 @@ pub fn get_colorized_card_name(card: Card) -> String {
             deck.cards.extend(from_discard);
             deck.shuffle();
 
-        } else { // Should this be a panic case?
-            discard.drain(..discard.len() - 4); // Keep the last four cards
+        } else {
+            // TODO: Investigate why this is necessary
+            discard.drain(..discard.len() - 1); // Keep the last four cards
 
             // push a supplementary deck
             let new_deck = Deck::generate();
