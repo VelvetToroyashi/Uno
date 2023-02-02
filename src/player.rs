@@ -310,7 +310,7 @@ fn easy(&mut self, turn: &Turn) -> TurnResult {
         let full_hand_size = turn.full_hand.len();
         let last_color = turn.last_card.color().unwrap();
 
-        let should_stack = matches!(turn.last_card, Card::DrawTwo { .. } | Card::DrawFour { .. });
+        let should_stack = turn.to_draw > 0 && matches!(turn.last_card, Card::DrawTwo { .. } | Card::DrawFour { .. });
 
         if should_stack {
             let preferred_color = Self::get_preferable_color(turn.full_hand, last_color);
@@ -386,7 +386,7 @@ fn easy(&mut self, turn: &Turn) -> TurnResult {
             let weight_idx = &WeightedIndex::new(&weights).unwrap();
             let mut weight_iter = self.ran.sample_iter(weight_idx);
 
-            for _ in 0..10 {
+            for h in 0..10 {
                 let index = weight_iter.next().unwrap();
                 let card = card_types.get(index).unwrap();
 
@@ -443,7 +443,7 @@ fn easy(&mut self, turn: &Turn) -> TurnResult {
     }
 
     /// Attempts to get the most preferable card color (e.g. the color the player has the most of, that isn't the current color).
-    fn get_preferable_color(hand: &Vec<Card>, last_color: CardColor) -> CardColor {
+    fn get_preferable_color(hand: &[Card], last_color: CardColor) -> CardColor {
 
         hand.iter()
             .filter_map(|c| c.color())
