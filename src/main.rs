@@ -23,9 +23,9 @@ fn main() {
     let mut rng2 = &mut thread_rng();
     let mut rng3 = &mut thread_rng();
 
-    let ai_one = &mut player::Ai::new(&mut rng, AIDifficulty::Easy);
-    let ai_two = &mut player::Ai::new(&mut rng2, AIDifficulty::Medium);
-    let ai_three = &mut player::Ai::new(&mut rng3, AIDifficulty::Hard);
+    let ai_one = &mut player::Ai::new(&mut rng, difficulty);
+    let ai_two = &mut player::Ai::new(&mut rng2, difficulty);
+    let ai_three = &mut player::Ai::new(&mut rng3, difficulty);
 
     println!("Lets start with your name: ");
     let mut name = String::new();
